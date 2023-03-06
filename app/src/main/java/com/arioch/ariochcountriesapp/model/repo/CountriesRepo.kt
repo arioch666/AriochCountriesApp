@@ -1,16 +1,19 @@
 package com.arioch.ariochcountriesapp.model.repo
 
+import android.content.Context
 import com.arioch.ariochcountriesapp.model.dao.CountriesDao
 import com.arioch.ariochcountriesapp.model.entity.CountryEntity
 import com.arioch.ariochcountriesapp.model.entity.toListOfCountryUiObjForList
-import com.arioch.ariochcountriesapp.network.CountriesApiService
+import com.arioch.ariochcountriesapp.network.NetworkHandler
+import com.arioch.ariochcountriesapp.network.data.CountryNetworkObj
+import com.arioch.ariochcountriesapp.network.data.NetworkResult
+import com.arioch.ariochcountriesapp.network.data.NetworkState
 import com.arioch.ariochcountriesapp.network.data.toCountryEntityList
 import com.arioch.ariochcountriesapp.ui.data.CountryUiObjForList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
-import retrofit2.HttpException
-import java.io.IOException
 
 /**
  * Repo for the countries data.
@@ -19,13 +22,13 @@ import java.io.IOException
  *
  * Handles determination of network vs local data fetching.
  */
-class CountriesRepo(private val countriesDao: CountriesDao,
-                    private val countriesApiService: CountriesApiService) {
-
+class CountriesRepo(private val countriesDao: CountriesDao) {
     /**
      * Flow of countries data from the local DB.
      */
     private val allCountriesListFlow: Flow<List<CountryEntity>> = countriesDao.getAllCountries()
+    private val networkHandler = NetworkHandler.getNetworkHandler()
+    val networkStateFlow: Flow<NetworkState> = networkHandler.networkStateFlow
 
     /**
      * Flow that emits [CountryUiObjForList] when data from the [allCountriesListFlow] is updated.
@@ -40,7 +43,7 @@ class CountriesRepo(private val countriesDao: CountriesDao,
      * Since room runs all queries on a different thread there is no need to make this a
      * suspend function.
      */
-    fun insertCountriesIntoDB(vararg countries: CountryEntity) {
+    private fun insertCountriesIntoDB(vararg countries: CountryEntity) {
         countriesDao.insertAll(*countries)
     }
 
@@ -48,10 +51,10 @@ class CountriesRepo(private val countriesDao: CountriesDao,
      * Fetches the countries data from the network if local data is unavailable or the refresh is
      * forced.
      */
-    suspend fun fetchCountries(forceNetworkFetch: Boolean) {
+    suspend fun fetchCountries(forceNetworkFetch: Boolean, context: Context) {
         // TODO: Add checked values check? or add Cache to retrofit's OkHttpClient.
         if (forceNetworkFetch) {
-            requestCountriesFromNetwork()
+            requestCountriesFromNetwork(context = context)
         }
 
         countriesDao.getAllCountries()
@@ -60,25 +63,28 @@ class CountriesRepo(private val countriesDao: CountriesDao,
     /**
      * Triggers a network request for the countries from the API endpoint.
      */
-    private suspend fun requestCountriesFromNetwork() {
-        // TODO move this try catch to a more central location like a network handler.
-        try {
-            val countriesFetchResponse = countriesApiService.getCountries()
-            if (countriesFetchResponse.isSuccessful) {
-                val countriesNetworkNullableList = countriesFetchResponse.body()
-
-                countriesNetworkNullableList?.let { countriesNetworkNonNullList ->
-                    val countriesEntityList = countriesNetworkNonNullList.toCountryEntityList()
-                    insertCountriesIntoDB(*(countriesEntityList.toTypedArray()))
+    private suspend fun requestCountriesFromNetwork(context: Context) {
+        networkHandler
+            .networkResultFlow
+                .filterIsInstance<NetworkResult.NetworkSuccess<*>>()
+                .collect { networkResult ->
+                    if (networkResult.networkResultBody is List<*>) {
+                        val resultBody = networkResult.networkResultBody
+                        if (resultBody.isNotEmpty()
+                            && resultBody.firstOrNull() is CountryNetworkObj) {
+                            val countryNetworkObjList: List<CountryNetworkObj> =
+                                resultBody as List<CountryNetworkObj>
+                            val countryEntityList = countryNetworkObjList
+                                                                        .toCountryEntityList()
+                            insertCountriesIntoDB(*countryEntityList.toTypedArray())
+                        }
+                    }
                 }
-            } else {
-                // TODO handle network error.
-            }
-        } catch (e: IOException) {
-            // TODO move this to a central network handler for centralized error handling.
-            // TODO Communicate the error to the UI.
-        } catch (e: HttpException) {
-            // TODO Communicate the error to the UI.
-        }
+
+        /**
+         * The Network handler will take care of errors and pass those along through the network
+         * state or network result flows.
+         */
+        networkHandler.makeCountriesRequest(context)
     }
 }
