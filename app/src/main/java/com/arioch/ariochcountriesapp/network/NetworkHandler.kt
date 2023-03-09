@@ -1,17 +1,11 @@
 package com.arioch.ariochcountriesapp.network
 
-import android.content.Context
-import android.util.Log
-import com.arioch.ariochcountriesapp.network.data.CountryNetworkObj
 import com.arioch.ariochcountriesapp.network.data.NetworkResult
 import com.arioch.ariochcountriesapp.network.data.NetworkState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import retrofit2.HttpException
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 
 /**
@@ -55,7 +49,6 @@ class NetworkHandler private constructor() {
 
     /**
      * Makes the network request for countries data.
-     * @param context is used to determine if the network is available.
      */
     suspend fun makeCountriesRequest(isNetworkConnected: Boolean) {
         if (isNetworkConnected.not()) {

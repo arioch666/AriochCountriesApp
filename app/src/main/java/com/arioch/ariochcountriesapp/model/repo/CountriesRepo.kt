@@ -1,6 +1,5 @@
 package com.arioch.ariochcountriesapp.model.repo
 
-import android.util.Log
 import com.arioch.ariochcountriesapp.model.dao.CountriesDao
 import com.arioch.ariochcountriesapp.model.entity.CountryEntity
 import com.arioch.ariochcountriesapp.model.entity.toListOfCountryUiObjForList
