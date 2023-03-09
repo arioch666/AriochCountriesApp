@@ -1,6 +1,5 @@
 package com.arioch.ariochcountriesapp.model.repo
 
-import android.util.Log
 import com.arioch.ariochcountriesapp.model.dao.CountriesDao
 import com.arioch.ariochcountriesapp.model.entity.CountryEntity
 import com.arioch.ariochcountriesapp.model.entity.toListOfCountryUiObjForList
@@ -23,34 +22,19 @@ class CountriesRepo(private val countriesDao: CountriesDao) {
     /**
      * Flow of countries data from the local DB.
      */
-    private val allCountriesListFlow: Flow<List<CountryEntity>> = countriesDao.getAllCountries().map {countriesList->
-        Log.d("arioch repo countrieslistFlow","countriesList size: ${countriesList.size}")
-        countriesList
-    }.onStart {
+    private val allCountriesListFlow: Flow<List<CountryEntity>> = countriesDao.getAllCountries().onStart {
         emit(listOf())
     }
 
     private val networkHandler = NetworkHandler.getNetworkHandler()
-    val networkStateFlow: Flow<NetworkState> = networkHandler.networkStateFlow.map {
-        Log.d("arioch repo networkstateflow", "netowrkState: $it")
-        it
-    }
+    val networkStateFlow: Flow<NetworkState> = networkHandler.networkStateFlow
     val networkResultFlow: Flow<NetworkResult> = networkHandler
         .networkResultFlow
-        .map {
-            Log.d("arioch CountriesRepo", "networkResultFlow: $it")
-            it
-        }
-
-
-
-
 
     /**
      * Flow that emits [CountryUiObjForList] when data from the [allCountriesListFlow] is updated.
      */
     val allCountriesUiObjForListFlow: Flow<List<CountryUiObjForList>> = allCountriesListFlow.map {countryEntityList ->
-        Log.d("arioch allCountriesUiObjForListFlow", "countriesEntityList Size: ${countryEntityList.size}")
         countryEntityList.toListOfCountryUiObjForList()
     }
 
@@ -61,7 +45,6 @@ class CountriesRepo(private val countriesDao: CountriesDao) {
      * suspend function.
      */
     suspend fun insertCountriesIntoDB(vararg countries: CountryEntity) {
-        Log.d("arioch repo", "inserting: ${countries.size} into db")
         countriesDao.insertAll(*countries)
     }
 
@@ -71,7 +54,6 @@ class CountriesRepo(private val countriesDao: CountriesDao) {
      */
     suspend fun fetchCountries(forceNetworkFetch: Boolean, isNetworkConnected: Boolean) {
         if (forceNetworkFetch) {
-            Log.d("arioch Repo:fetchCountries", "Forcing network request")
             requestCountriesFromNetwork(isNetworkConnected)
         }
 
