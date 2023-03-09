@@ -6,6 +6,12 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="retry">retry</string>
+    <string name="coma">,</string>
+    <string name="network_disconnected">It appears there is not internet connection.</string>
+    <string name="countries_list_empty">There do not appear to be any countries to show at the moment.</string>
+
+
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris

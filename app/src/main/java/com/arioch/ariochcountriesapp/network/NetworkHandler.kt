@@ -1,6 +1,8 @@
 package com.arioch.ariochcountriesapp.network
 
 import android.content.Context
+import android.util.Log
+import com.arioch.ariochcountriesapp.network.data.CountryNetworkObj
 import com.arioch.ariochcountriesapp.network.data.NetworkResult
 import com.arioch.ariochcountriesapp.network.data.NetworkState
 import kotlinx.coroutines.flow.Flow
@@ -8,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import retrofit2.HttpException
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 
 /**
@@ -18,22 +22,19 @@ import java.io.IOException
 class NetworkHandler private constructor() {
     private val mutableNetworkStateFlow = MutableStateFlow<NetworkState>(NetworkState.Idle)
     private val mutableNetworkResultFlow = MutableStateFlow<NetworkResult>(NetworkResult.NetworkSilent)
-    val networkStateFlow: Flow<NetworkState> = mutableNetworkStateFlow.distinctUntilChanged { old, new -> old == new }
-    val networkResultFlow: Flow<NetworkResult> = mutableNetworkResultFlow.distinctUntilChanged { old, new -> old == new }
+    val networkStateFlow: Flow<NetworkState> = mutableNetworkStateFlow
+    val networkResultFlow: Flow<NetworkResult> = mutableNetworkResultFlow
 
     /**
      * Makes the network requests passed in.
      *
      * Central place for handling error cases
      */
-    private suspend inline fun <T> makeNetworkRequest(context: Context, request: ()->Response<T>) {
+    private suspend inline fun <T> makeNetworkRequest(request: ()->Response<T>) {
         try {
-            if (NetworkConnectivityHelper.isConnected(context).not()) {
-                mutableNetworkStateFlow.emit(NetworkState.NotConnected)
-                return
-            }
-            mutableNetworkStateFlow.emit(NetworkState.Loading)
             val response = request()
+            mutableNetworkStateFlow.emit(NetworkState.Loading)
+
             if (response.isSuccessful) {
                 mutableNetworkResultFlow.emit(NetworkResult.NetworkSuccess(response.body()))
                 mutableNetworkStateFlow.emit(NetworkState.Idle)
@@ -56,9 +57,13 @@ class NetworkHandler private constructor() {
      * Makes the network request for countries data.
      * @param context is used to determine if the network is available.
      */
-    suspend fun makeCountriesRequest(context: Context) {
-        makeNetworkRequest(context = context) {
-           CountriesApi.countriesApiService.getCountries()
+    suspend fun makeCountriesRequest(isNetworkConnected: Boolean) {
+        if (isNetworkConnected.not()) {
+            mutableNetworkStateFlow.emit(NetworkState.NotConnected)
+        } else {
+            makeNetworkRequest {
+                CountriesApi.countriesApiService.getCountries()
+            }
         }
     }
 

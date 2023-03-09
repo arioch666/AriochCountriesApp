@@ -5,14 +5,15 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 
 /**
+ * TODO Convert to object instead of class. There is no need to store context here.
  * Assists with checking if the device is connected before making network calls.
  */
-object NetworkConnectivityHelper {
+class NetworkConnectivityHelper(private val context: Context) {
     /**
      * Checks for the network capabilities and returns true if the network is available
      * false otherwise.
      */
-    fun isConnected(context: Context): Boolean {
+    fun isConnected(): Boolean {
         try {
             val connectivityManager = context.
                                         applicationContext
@@ -29,6 +30,5 @@ object NetworkConnectivityHelper {
         } catch(e: Exception) {
             return false
         }
-
     }
 }
