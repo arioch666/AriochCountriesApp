@@ -35,30 +35,41 @@ class CountriesViewModel(private val countriesRepository: CountriesRepo): ViewMo
     init {
         viewModelScope.launch {
             countriesRepository.networkResultFlow.collectLatest { result ->
-                Log.d("arioch viewmodel", "result in viewModel $result")
-                if (result::class.java.isAssignableFrom(NetworkResult.NetworkSuccess::class.java)) {
-                    val networkSuccessResult = result as NetworkResult.NetworkSuccess<*>
-                    val networkResultBody = networkSuccessResult.networkResultBody
-                    if(networkResultBody!= null && networkResultBody::class.java.isAssignableFrom(ArrayList::class.java)) {
-                        val resultList = networkResultBody as List<*>
-                        if (resultList.isNotEmpty() && resultList.first()!!::class.java.isAssignableFrom(CountryNetworkObj::class.java)) {
-                            @Suppress("UNCHECKED_CAST")
-                            val resultListCountryNetworkObj = resultList as List<CountryNetworkObj>
-                            val countryEntityList = resultListCountryNetworkObj.toCountryEntityList()
-                            withContext(Dispatchers.IO) {
-                                countriesRepository.insertCountriesIntoDB(*countryEntityList.toTypedArray())
-                            }
-                        }
+                parseResponseAndInsertIntoDB(result)
+            }
+        }
+    }
+
+    private suspend fun parseResponseAndInsertIntoDB(result: NetworkResult) {
+        if (result::class.java.isAssignableFrom(NetworkResult.NetworkSuccess::class.java)) {
+            val networkSuccessResult = result as NetworkResult.NetworkSuccess<*>
+            val networkResultBody = networkSuccessResult.networkResultBody
+            if (networkResultBody != null && networkResultBody::class.java.isAssignableFrom(
+                    ArrayList::class.java
+                )
+            ) {
+                val resultList = networkResultBody as List<*>
+                if (resultList.isNotEmpty() && resultList.first()!!::class.java.isAssignableFrom(
+                        CountryNetworkObj::class.java
+                    )
+                ) {
+                    @Suppress("UNCHECKED_CAST")
+                    val resultListCountryNetworkObj = resultList as List<CountryNetworkObj>
+                    val countryEntityList = resultListCountryNetworkObj.toCountryEntityList()
+                    /**
+                     * adding this to prevent:
+                     * java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+                     */
+                    withContext(Dispatchers.IO) {
+                        countriesRepository.insertCountriesIntoDB(*countryEntityList.toTypedArray())
                     }
                 }
             }
         }
-
     }
 
     fun getCountries(forceNetworkRequest: Boolean, isNetworkConnected: Boolean) {
         viewModelScope.launch {
-            Log.d("arioch viewmodel", "forceNetworkRequest: $forceNetworkRequest, isNetworkConnected: $isNetworkConnected")
             countriesRepository.fetchCountries(forceNetworkRequest, isNetworkConnected)
         }
     }

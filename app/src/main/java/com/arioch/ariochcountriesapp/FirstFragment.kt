@@ -81,7 +81,6 @@ class FirstFragment : Fragment() {
          * TODO fix the network state. It has not been completely setup.
          */
         viewModel?.networkStatus?.observe(this.viewLifecycleOwner) { networkState ->
-            Log.d("ariochFragment", "NetworkState: $networkState")
             when (networkState) {
                 is NetworkState.NotConnected -> {
                     Snackbar.make(
@@ -98,15 +97,16 @@ class FirstFragment : Fragment() {
         }
     }
 
+    /**
+     * Observer the countries list in the view model.
+     */
     private fun addCountriesListObserver() {
         viewModel?.countriesList?.observe(this.viewLifecycleOwner) { countryUiObjList ->
             if (countryUiObjList.isEmpty()) {
-                Log.d("arioch", "Empty List of countries")
                 binding.recyclerViewCountries.visibility = View.INVISIBLE
                 binding.textViewErrorOrEmpty.text = getString(R.string.countries_list_empty)
                 binding.frameLayoutErrorOrEmpty.visibility = View.VISIBLE
             } else {
-                Log.d("arioch", "List of countries: ${countryUiObjList.size}")
                 countriesList = countryUiObjList
                 (adapter as CountriesRecyclerViewAdapter).replaceList(countriesList)
                 binding.recyclerViewCountries.visibility = View.VISIBLE

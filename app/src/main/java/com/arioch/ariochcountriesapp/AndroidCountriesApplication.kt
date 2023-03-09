@@ -14,10 +14,4 @@ class AndroidCountriesApplication: Application() {
     val countriesRepo by lazy {
         CountriesRepo(countriesDB.countriedDAO())
     }
-
-    override fun onCreate() {
-        super.onCreate()
-        RetrofitProvider.createRetrofitInstance(this)
-    }
-
 }

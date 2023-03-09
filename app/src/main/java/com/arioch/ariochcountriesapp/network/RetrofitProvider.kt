@@ -13,21 +13,17 @@ object RetrofitProvider {
     private const val BASE_URL =
         "https://gist.githubusercontent.com/peymano-wmt/32dcb892b06648910ddd40406e37fdab/raw/db25946fd77c5873b0303b858e861ce724e0dcd0/"
 
-    private var retrofit: Retrofit? = null
+    private var retrofit = Retrofit
+        .Builder()
+        .baseUrl(BASE_URL)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
 
-    fun createRetrofitInstance(context: Context) {
-        val networkConnectivityHelper = NetworkConnectivityHelper(context)
-        retrofit = Retrofit
-            .Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
 
     /**
      * Handle this better. Need to make sure this is not null before returning.
      */
     fun getRetrofitInstance(): Retrofit {
-        return retrofit!!
+        return retrofit
     }
 }

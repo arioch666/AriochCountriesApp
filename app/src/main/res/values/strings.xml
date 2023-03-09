@@ -8,7 +8,7 @@
     <string name="previous">Previous</string>
     <string name="retry">retry</string>
     <string name="coma">,</string>
-    <string name="network_disconnected">It appears there is not internet connection.</string>
+    <string name="network_disconnected">It appears there is no internet connection.</string>
     <string name="countries_list_empty">There do not appear to be any countries to show at the moment.</string>
 
 
