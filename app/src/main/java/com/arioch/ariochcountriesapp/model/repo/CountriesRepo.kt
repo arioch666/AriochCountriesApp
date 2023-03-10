@@ -10,6 +10,8 @@ import com.arioch.ariochcountriesapp.ui.data.CountryUiObjForList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Repo for the countries data.
@@ -45,7 +47,9 @@ class CountriesRepo(private val countriesDao: CountriesDao) {
      * suspend function.
      */
     suspend fun insertCountriesIntoDB(vararg countries: CountryEntity) {
-        countriesDao.insertAll(*countries)
+        mutex.withLock {
+            countriesDao.insertAll(*countries)
+        }
     }
 
     /**
@@ -69,5 +73,12 @@ class CountriesRepo(private val countriesDao: CountriesDao) {
          * state or network result flows.
          */
         networkHandler.makeCountriesRequest(isNetworkConnected)
+    }
+
+    companion object {
+        /**
+         * mutex used for insertion to make sure there is only 1 insertion being queued at a time.
+         */
+        private val mutex = Mutex()
     }
 }

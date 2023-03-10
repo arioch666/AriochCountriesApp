@@ -14,6 +14,6 @@ interface CountriesApiService {
 
 object CountriesApi {
     internal val countriesApiService: CountriesApiService by lazy {
-        RetrofitProvider.getRetrofitInstance().create(CountriesApiService::class.java)
+        RetrofitProvider.retrofit.create(CountriesApiService::class.java)
     }
 }
